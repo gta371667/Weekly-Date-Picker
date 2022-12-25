@@ -20,8 +20,9 @@ class WeeklyDatePicker extends StatefulWidget {
     this.weeknumberColor = const Color(0xFFB2F5FE),
     this.weeknumberTextColor = const Color(0xFF000000),
     this.daysInWeek = 7,
-  })  : assert(weekdays.length == daysInWeek,
-            "weekdays must be of length $daysInWeek"),
+    this.previousPage,
+    this.nextWidget,
+  })  : assert(weekdays.length == daysInWeek, "weekdays must be of length $daysInWeek"),
         super(key: key);
 
   /// The current selected day
@@ -62,6 +63,10 @@ class WeeklyDatePicker extends StatefulWidget {
 
   /// Specifies the number of weekdays to render, default is 7, so Monday to Sunday
   final int daysInWeek;
+
+  final Widget? previousPage;
+
+  final Widget? nextWidget;
 
   @override
   _WeeklyDatePickerState createState() => _WeeklyDatePickerState();
@@ -107,15 +112,24 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
                     style: TextStyle(color: widget.weeknumberTextColor),
                   ),
                 )
-              : Container(),
+              : const SizedBox.shrink(),
+          if (widget.previousPage != null)
+            GestureDetector(
+              onTap: () {
+                _controller.previousPage(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.linear,
+                );
+              },
+              child: widget.previousPage,
+            ),
           Expanded(
             child: PageView.builder(
               controller: _controller,
               onPageChanged: (int index) {
                 setState(() {
-                  _weeknumberInSwipe = _initialSelectedDay
-                      .add(Duration(days: 7 * (index - _weekIndexOffset)))
-                      .weekOfYear;
+                  _weeknumberInSwipe =
+                      _initialSelectedDay.add(Duration(days: 7 * (index - _weekIndexOffset))).weekOfYear;
                 });
               },
               scrollDirection: Axis.horizontal,
@@ -126,6 +140,16 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
               ),
             ),
           ),
+          if (widget.nextWidget != null)
+            GestureDetector(
+              onTap: () {
+                _controller.nextPage(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.linear,
+                );
+              },
+              child: widget.nextWidget,
+            ),
         ],
       ),
     );
@@ -138,8 +162,7 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
     for (int i = 0; i < widget.daysInWeek; i++) {
       final int offset = i + 1 - _initialSelectedDay.weekday;
       final int daysToAdd = weekIndex * 7 + offset;
-      final DateTime dateTime =
-          _initialSelectedDay.add(Duration(days: daysToAdd));
+      final DateTime dateTime = _initialSelectedDay.add(Duration(days: daysToAdd));
       weekdays.add(_dateButton(dateTime));
     }
     return weekdays;
@@ -162,8 +185,7 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
                 padding: EdgeInsets.only(bottom: 4.0),
                 child: Text(
                   '$weekday',
-                  style:
-                      TextStyle(fontSize: 12.0, color: widget.weekdayTextColor),
+                  style: TextStyle(fontSize: 12.0, color: widget.weekdayTextColor),
                 ),
               ),
               Container(
@@ -175,17 +197,12 @@ class _WeeklyDatePickerState extends State<WeeklyDatePicker> {
                         : Colors.transparent,
                     shape: BoxShape.circle),
                 child: CircleAvatar(
-                  backgroundColor: isSelected
-                      ? widget.selectedBackgroundColor
-                      : widget.backgroundColor,
+                  backgroundColor: isSelected ? widget.selectedBackgroundColor : widget.backgroundColor,
                   radius: 14.0,
                   child: Text(
                     '${dateTime.day}',
                     style: TextStyle(
-                        fontSize: 16.0,
-                        color: isSelected
-                            ? widget.selectedDigitColor
-                            : widget.digitsColor),
+                        fontSize: 16.0, color: isSelected ? widget.selectedDigitColor : widget.digitsColor),
                   ),
                 ),
               ),
